@@ -1,0 +1,101 @@
+public class BulletTrackingProjectile : MonoBehaviour
+{
+  //this vector is used for lerping objects to random directions within a unit circle scaled
+  [SerializeField] private Vector3 m_Vec3Scale = new Vector3(4.0f, 1.0f, 4.0f);
+  //speed of the bullet
+  [SerializeField] private float m_BulletSpeedInDirectionOfPlayer = 2.0f;
+  //timer for waiting when the projectiles reach its target position
+  [SerializeField] private float m_Timer = 1.0f;
+  //destroy projectile after it spawns
+  [SerializeField] private float m_DestroyAfterTime = 7.5f;
+  //this is the special sauce for projectiles to feel good
+  [SerializeField] private float m_StopTrackingDistance = 5.0f;
+  //this is a scaled unit circle
+  private Vector3 random_within_circle_radius;
+  //current position of projectile
+  private Vector3 currentPos;
+  //rigidbody for the projectile
+  private Rigidbody m_Rigid;
+  //lerp timer
+  private float TimeTillTarget = 0.0f;
+  //state checking for bullet interpolation
+  private bool m_BulletLerpEnded = false;
+  //state checking for the timer
+  private bool m_TimerDone = false;
+
+  // Start is called before the first frame update
+  void Start()
+  {
+    //this is setting up the scaled unit sphere, this is the point in which the projectiles will go through
+    random_within_circle_radius = 
+    RandomScaledVector3(Random.insideUnitSphere, m_Vec3Scale);
+    //current position of the projectile
+    currentPos = this.transform.position;
+    //setting up the rigidbody component for the projectile
+    m_Rigid = GetComponent<Rigidbody>();
+  }
+  
+  //Vector3 component-wise scaling 
+  Vector3 RandomScaledVector3(Vector3 A, Vector3 B)
+  {
+    return new Vector3(A.x * B.x, A.y * B.y, A.z * B.z);
+  }
+
+  // Update is called once per frame
+  void Update()
+  {
+    //bullet state 
+    TimeTillTarget += Time.deltaTime;
+
+    if (TimeTillTarget < 1.0f)
+    {
+      //lerp the bullet to the positions within the random circle
+      transform.position = 
+      Vector3.Lerp(currentPos, currentPos + random_within_circle_radius, TimeTillTarget);
+    }
+    else
+    {
+      //lerp state has finished
+      m_BulletLerpEnded = true;
+    }
+
+    //timer state
+    if (m_Timer > 0.0f)
+    {
+      //setting the velocity to 0 to be safe but also so the bullet doesnt fly off after the timer is up
+      m_Rigid.velocity = Vector3.zero;
+      //tick down the timer
+      m_Timer -= Time.deltaTime;
+    }
+    else
+    {
+      //set the timer state as it is done now
+      m_TimerDone = true;
+    }
+
+    //add bullet speed state
+    if (m_BulletLerpEnded == true && m_TimerDone == true)
+    {
+      //track the players movements 
+      //(the addition of the vector here is for aiming at the center of the player)
+      Vector3 direction = Player.BaseInstanceObject.transform.position + 
+      new Vector3(0.0f, .6f, 0.0f) - this.transform.position;
+
+      //if the distance between the bullet and player is less than m_StopTrackingDistance
+      //direction of the bullet is now its velocity
+      if (Vector3.Distance(gameObject.transform.position, 
+         Player.BaseInstanceObject.transform.position) < m_StopTrackingDistance)
+      {
+        //set direction the bullet was facing in (special sauce for making it feel good)
+        direction = gameObject.GetComponent<Rigidbody>().velocity;
+      }
+
+      //set the velocity of the bullet
+      Vector3 accel = (direction).normalized * m_BulletSpeedInDirectionOfPlayer;
+      m_Rigid.velocity = accel;
+
+      //destroy after X secodns after some amount of time
+      Destroy(this.gameObject, m_DestroyAfterTime);
+    }
+  }
+}

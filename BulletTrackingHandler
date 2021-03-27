@@ -1,0 +1,31 @@
+public class BulletTrackingHandler: MonoBehaviour
+{
+  //object to be spawned multiple times
+  [SerializeField] private GameObject m_FireCastProjectile;
+  //number of projectiles to be spawned
+  [SerializeField] private int m_NumberOfBullets = 10;
+
+  void Update()
+  {
+    //testing handler function with a keycode press
+    if (Input.GetKeyDown(KeyCode.H) == true)
+    {
+      //calling the spawning function
+      CastRangeBurst(m_NumberOfBullets);
+    }
+  }
+
+ //function to spaw the projectiles
+ void CastRangeBurst(int NumberOfBullets)
+  {
+    //spawn projectiles from location
+    for (int i = 0; i < NumberOfBullets; ++i)
+    {
+      //spawn the projectile object
+      //this object will contain the projectile script 
+      //which handles the heavy lifting of the bullet
+      GameObject firebullet_spawn = 
+      Instantiate(m_FireCastProjectile, this.transform.position,  Quaternion.identity);
+    }
+  }
+}
